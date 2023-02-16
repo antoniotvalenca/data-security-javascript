@@ -1,1 +1,9 @@
-# data-security-javascript
+DATA SECURITY WITH JAVASCRIPT
+
+1) PASSWORD HASHIFICATION with bcrypt
+
+2) LOGIN TOKEN with jsonwebtoken
+
+3) CONTENT VALIDATION with yup
+
+4) HTML DANGEROUS CONTENT FILTER with sanitize-html

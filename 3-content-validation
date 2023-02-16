@@ -1,0 +1,101 @@
+VALIDAÇÃO DE CONTEÚDO COM O YUP
+
+-> npm install yup
+
+-> o yup é uma biblioteca .js que trata e valida dados inseridos por usuários de várias maneiras:
+    -> se corresponde àquele datatype
+    -> é capaz de transformar aqueles dados (caso seja necessário)
+    -> se é um campo obrigatório
+    -> se é um dado válido de acordo com o que se espera
+        -> ex: se é aquele cpf inserido é de fato um cpf ou um random number que o usuário inseriu
+        
+-> O yup é organizado em 2 pastas:
+    -> schema (onde realmente se coloca o código yup de validação)
+    -> utils (onde é tratado esses códigos do schema em conjunto com os dados passados pelo usuário, absorvidos pela requisição (o que fica no 
+       req.params ou req.body));
+    -> Depois, essa função é invocada no Routes, onde se coloca como parâmetro aquele schema específico que deve tratar os dados passados)
+
+    EX: Vamos tratar os dados de CADASTRO
+
+    1) SCHEMA:
+
+            const yup = require('yup');
+            const moment = require('moment');
+            const { isValidCpf } = require('../utils/cpf-validator')();
+            const sanitizeHtml = require('sanitize-html');
+
+            const schema = {
+                store: {
+                    body: yup.object().shape({
+                        name: yup.string()
+                            .max(255, "it must be less than 255 characters.")
+                            .transform( value => { return sanitizeHtml(value); })
+                            .required(),
+                        born: yup.date()
+                            .test("Invalid date format", null, value => { return moment(value, 'YYYY-MM-DD').isValid(); })
+                            .required(),
+                        cpf: yup.string()
+                            .test("Invalid CPF number", null, value => { return isValidCpf(value); })
+                            .required(),
+                        email: yup.string()
+                            .transform( value => { return sanitizeHtml(value); })
+                            .email()
+                            .required(),
+                        password: yup.string()
+                            .transform( value => { return sanitizeHtml(value); })
+                            .required()
+                            .min(8),
+                    }).noUnknown()
+                },
+
+                login: {
+                    ...
+                },
+
+                update: {
+                    ...
+                }
+            };
+
+            return {
+                schema
+            };
+        }
+
+        -> nesse código, eu estou declarando as especificades e/ou o tratamento de cada código. por exemplo, 
+        estou dizendo que o password do cadastro deve ser um dado cadastrado do tipo STRING, sendo REQUIRED(obrigatório) e
+        deve ter um mínimo de 8 caracteres. O transform vai transformar o dado, de forma em que se for um HTML ele não bugará
+        o código pois será retornado de modo que não seja um html (visto no tópico de sanitize)
+
+
+  2) UTILS - SCHEMAVALIDATOR.JS
+                const Validate = (schema) => {
+                return async (req, res, next) => {
+                    try {
+                        req.body = Object.keys(req.body).length
+                        ? await schema.body.validate(req.body) : null;
+
+                        req.params = req?.params && Object.keys(req.params).length
+                        ? await schema.params.validate(req.params) : null;
+
+                        return next();
+                    } catch (error) {
+                        res.status(401).json({ error: error.message });
+                    };
+                };
+            };
+
+            return {
+                Validate
+            };
+        -> Aqui, estou absorvendo os dados passados pelo usuário no req.body e req.params e checando se ele se adequa às especificidades
+        passadas no código do schema espefíco (passado no routes)
+
+  3) ROUTES
+
+            const UserSchema = require('../schema/user')();
+            const SchemaValidator = require('../utils/schema-validator')();
+
+            routes.post('/signup', SchemaValidator.Validate(UserSchema.schema.store), UserController.store);
+
+-> Agora, em routes, estou importando o UserSchema e o SchemaValidator, passando como parâmetro o Schema específico que será comparado com o req.body

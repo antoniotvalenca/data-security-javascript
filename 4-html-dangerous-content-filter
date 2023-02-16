@@ -1,0 +1,24 @@
+TRATAMENTO DE HTML com o Sanitize
+
+-> O sanitize é uma biblioteca .js que possíveis dados perigosos passados por usuários maliciosos
+-> Isto é, no campo de nome ele passa um HTML que, possivelmente, bugará a página. Ou, através do código HTML, ele passa o escopo de uma função
+onclick, etc
+
+-> npm install sanitize-html
+
+-> 
+
+import sanitizeHtml from 'sanitize-html'; // const sanitizeHtml = require('sanitize-html');
+
+const html = "<strong>hello world</strong>";
+console.log(sanitizeHtml(html));
+console.log(sanitizeHtml("<img src=x onerror=alert('img') />"));
+console.log(sanitizeHtml("console.log('hello world')"));
+console.log(sanitizeHtml("<script>alert('hello world')</script>"));
+console.log('teste')
+LOGS:
+<strong>hello world</strong>
+*nao logará nada*
+console.log('hello world')
+*nao logará nada*
+teste

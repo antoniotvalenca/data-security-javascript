@@ -1,0 +1,26 @@
+-> O Express Rate Limit é uma lib que lida com a estratégia de limite de tráfego de Rede.
+-> Em outras palavras, ela limita a frequencia com que alguem pode repetir uma ação dentro de um determinado período de tempo (ex: tentar um login)
+-> Existem atacantes que, por exemplo, criam BOTs para tentar logar numa conta com uma biblioteca de senhas. O Rate-Limit entra para frear esse tipo de atividade
+-> Ou, criando contas excessivamente para sobrecarregar a base de dados
+
+-> npm install express-rate-limit
+
+-> 1) Dentro do server.js/app.js (onde será invocado o express), importar o rateLimit
+   2) Definir o limiter através do rateLimit
+   3) Aplicar o middleware do limiter para todas as requisições com o app.use(limiter)
+
+-> Obs: O rate-limit deve ser invocado com o app.use (no contexto de ser um middleware geral para toda a aplicação) ou no paths/routes (como middleware daquele route)
+
+-> Código:
+
+        const express = require("express");
+        const rateLimit = require("express-rate"); // importando o rateLimit
+        const app = express();
+
+        const limiter = rateLimit({     // definindo o rateLimit
+            windowsMs: 15 * 60 * 1000,  // 15 minutos
+            max: 100,                   // maximo de 100 requisiçoes
+            message: "mensagem"         // mensagem que será exibida no caso de muitos acessos
+        });                             // em suma, estou dizendo que posso fazer no max 100 requisicoes por 15 minutos por aquele IP
+
+        app.use(limiter);

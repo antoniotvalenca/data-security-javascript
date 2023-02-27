@@ -24,3 +24,9 @@
         });                             // em suma, estou dizendo que posso fazer no max 100 requisicoes por 15 minutos por aquele IP
 
         app.use(limiter);
+
+ -> (adicionar isso dentro do limiter para limtiar pelo user id
+          keyGenerator: (req) => req.headers['user-id'] || req.ip, // use user ID header or IP address as the key
+          skip: (req) => !req.headers['user-id'], // skip rate limiting for requests without a user ID header
+          handler: (req, res) => {
+            res.status(429).json({ message: 'Too many requests, please try again later.' });

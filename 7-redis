@@ -1,0 +1,60 @@
+REDIS stands for Remote Dictionary Server
+
+-> É um banco de dados NoSQL
+  -> de modo geral, o Redis não tem entendimento qualquer sobre colunas/tabelas e armazena seus dados em pares de chave e valor
+  -> Ou seja, não é bom para armazenar dados estruturados como em bancos SQL, mas sim para guardar esses dados rápidos de chave e valor
+-> Diferentemente de outros bancos de dados (que armazenam os dados no disco), o Redis armazena na memória RAM
+  -> o que torna os dados de muito rápido acesso mas, em contra partida, os torna voláteis também (se seu pc der pau, você perde tudo)
+  -> ele é usado para "cache"
+    -> coisas que são muito acessadas ou dados que demoram muito para ser computados, são guardados no redis
+
+                  (1)                              (3)
+                  =>                               =>
+APLICAÇAO                    CACHE (REDIS)                DATABASE(MYSQL, POR EXEMEPLO)
+                  <=                               <=
+                  (2)
+            
+            
+
+
+
+1) Verificar se os dados estão em cache
+2) Se estiver em cache, retorna para a aplicação
+3) Se não estiver em cache, obter no banco de dados, salvar no cache e retornar para a aplicação
+
+
+___________________________________________________________________________________________________________________________________________
+
+INSTALAÇÃO *****
+
+(MAQUINA)
+-> Se estiver no MAC:
+    -> usar o homebrew
+    -> brew install redis
+
+(PROJETO)
+-> npm i redis
+    -> const redis = require('redis');
+___________________________________________________________________________________________________________________________________________
+
+COMANDOS *****
+
+-> redis-server (abre um servidor do redis numa porta default de numero x)
+-> redis-cli (abre um ambiente para voce usar linguagem do redis para realizar operaçoes CRUD no banco)
+  -> quit (quita do redis-cli)
+  -> SET key value (cria uma chave keu com o valor value)
+  -> GET key (retorna o valor da chave key)
+  -> EXISTS key (retorna 0[falso] caso a chave não exista ou 1[verdadeiro] caso ela exista)
+  -> KEYS * (mostra todas as chaves)
+  -> flushall (limpa o cache)
+  -> ttl key (checa o tempo de expiração da chave key)
+  -> expire key 10 (seta para expirar a chave key em 10 segundos)
+  -> setex key 10 value (cria a chave key com o valor value que expira em 10 segundos)
+
+  -> lpush key value (coloca no topo de uma array key, o valor value)
+  -> lrange key 0 -1 (printar a array "key" do indice 0 até o último índice)
+  -> LPOP key (vai tirar do array "key" o item que está no topo)
+  -> RPOP key (vai tirar do array "key" o item que está por último)
+
+
+* ler sobre cluster

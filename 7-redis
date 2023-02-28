@@ -35,6 +35,41 @@ INSTALAÇÃO *****
 (PROJETO)
 -> npm i redis
     -> const redis = require('redis');
+    
+-> dentro do server.js/app.js
+    -> const Redis = require('redis');
+       const redisClient = createClient();
+       
+-> agora, em nossas rotas, dentro das funções que lidam com requisição (no controller/service/middleware etc), podemos 
+   usar comandos do redis (adaptados para javascript).
+      -> ex:
+      
+            app.get("/photos", async (req, res) => { 
+              const { data } = await axios.get(*url de alguma api*, { params: {algum param }}) // dando um fetch numa api aleatoria
+              redisClient.setex("photos", 3600, JSON.stringfy(data) // agora, dentro do redis da pessoa q acessou, ela tem uma
+            })                                                         chave "PHOTOS" com o valor sendo o objeto extraido da api 
+            
+            
+          -> obs: nesse caso, estamos sempre fazendo o fetch e depois guardando no redis as infos. mas, toda vez que rodar esse codigo
+             sempre fará o fetch antes e, portanto, sempre demorará do mesmo jeito
+          -> nao é isso que queremos. o que queremos é que: o redis primeiro cheque se tem aquela info no cache. se tiver, a info já é
+             acessada. se nao tiver, a info é guardada e depois usada. PORTANTO:
+            
+            
+            app.get("/photos", async (req, res) => {
+              redisClient.get('photos', async (error, photos) => {      // procurando no redis se tem a chave photos         
+                if (error) console.error(error);                        // se der erro
+                if (photos != null) {                                   // se existir (nao for null)
+                  return res.json(JSON.parse(photos))
+                } else {                                                // se não existir (for null)
+                  const { data } = await axios.get(...); 
+                  redisClient.setex("photos", 3600, JSON.stringy(data))
+                  res.json(data)
+                }
+                
+              }
+            })
+            
 ___________________________________________________________________________________________________________________________________________
 
 COMANDOS *****

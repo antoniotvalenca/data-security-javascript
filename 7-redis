@@ -22,7 +22,8 @@ APLICAÇAO                    CACHE (REDIS)                DATABASE(MYSQL, POR E
 2) Se estiver em cache, retorna para a aplicação
 3) Se não estiver em cache, obter no banco de dados, salvar no cache e retornar para a aplicação
 
-
+-> Em suma, a diferença entre Redis e um banco de dados de disco é que o redis lida com validação de requisições, através de dados armazenados no
+servidor individual de cada cliente, enquanto o banco de dados mesmo lida com requisiçoes (já validadas) de dados
 ___________________________________________________________________________________________________________________________________________
 
 INSTALAÇÃO *****
@@ -39,6 +40,11 @@ INSTALAÇÃO *****
 -> dentro do server.js/app.js
     -> const Redis = require('redis');
        const redisClient = createClient();
+       
+       const startup = async () => {
+        await redisClient.connect();
+        app.listen(3001, () => { console.log('listening on port 3001') }
+       };
        
 -> agora, em nossas rotas, dentro das funções que lidam com requisição (no controller/service/middleware etc), podemos 
    usar comandos do redis (adaptados para javascript).

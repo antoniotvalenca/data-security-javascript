@@ -36,46 +36,57 @@ INSTALAÇÃO *****
 (PROJETO)
 -> npm i redis
     -> const redis = require('redis');
+___________________________________________________________________________________________________________________________________________
+
+REDIS COM EXPRESS RATE LIMIT
+
+-> Apesar do redis ser, a princípio, usado para o armazenamento rápido de informações volateis chave, ele pode ser combinado com o express rate limit
+para ter um controle maior do rate limit de um usuario
+-> Isto é: pode acontecer de um usuário cobrar várias requisicoes de um servidor em uma porta e acabar abrindo em outra para burlar esse sistema de
+limite de requisicao. e é ai que o redis entra, pois ele pode avaliar por ip, ou user id a quantidade de requisicoes
+-> Entenda o código a seguir
+  -> (no server.js/app.js):
+    require('./src/database');
+
+    const express = require('express');
+    const app = express();
+    const redis = require('redis');
+    const RedisStore = require('rate-limit-redis');
+    const rateLimit = require("express-rate-limit");
+    const userRoutes = require('./src/routes/userRoutes');
+    const quizzRoutes = require('./src/routes/quizzRoutes');
+
+    const redisClient = redis.createClient({ // AS CREDENCIAIS DO REDIS
+      socket: {
+        host: 'localhost',
+        port: 6379
+      }
+    });
     
--> dentro do server.js/app.js
-    -> const Redis = require('redis');
-       const redisClient = createClient();
-       
-       const startup = async () => {
-        await redisClient.connect();
-        app.listen(3001, () => { console.log('listening on port 3001') }
-       };
-       
--> agora, em nossas rotas, dentro das funções que lidam com requisição (no controller/service/middleware etc), podemos 
-   usar comandos do redis (adaptados para javascript).
-      -> ex:
-      
-            app.get("/photos", async (req, res) => { 
-              const { data } = await axios.get(*url de alguma api*, { params: {algum param }}) // dando um fetch numa api aleatoria
-              redisClient.setex("photos", 3600, JSON.stringfy(data) // agora, dentro do redis da pessoa q acessou, ela tem uma
-            })                                                         chave "PHOTOS" com o valor sendo o objeto extraido da api 
-            
-            
-          -> obs: nesse caso, estamos sempre fazendo o fetch e depois guardando no redis as infos. mas, toda vez que rodar esse codigo
-             sempre fará o fetch antes e, portanto, sempre demorará do mesmo jeito
-          -> nao é isso que queremos. o que queremos é que: o redis primeiro cheque se tem aquela info no cache. se tiver, a info já é
-             acessada. se nao tiver, a info é guardada e depois usada. PORTANTO:
-            
-            
-            app.get("/photos", async (req, res) => {
-              redisClient.get('photos', async (error, photos) => {      // procurando no redis se tem a chave photos         
-                if (error) console.error(error);                        // se der erro
-                if (photos != null) {                                   // se existir (nao for null)
-                  return res.json(JSON.parse(photos))
-                } else {                                                // se não existir (for null)
-                  const { data } = await axios.get(...); 
-                  redisClient.setex("photos", 3600, JSON.stringy(data))
-                  res.json(data)
-                }
-                
-              }
-            })
-            
+    const connectToRedis = async () => { await redisClient.connect().then(() => console.log('conectado no redis')).catch(() => console.log('erro ao conectar')) };
+    connectToRedis(); // CRIANDO UMA CONEXAO COM O REDIS
+
+    const limiter = rateLimit({
+      windowMs: 5 * 60 * 1000, // ESTOU DIZENDO QUE PODE SER FEITO UM MÁXIMO DE 2 REQUISICOES POR 5 MINUTOS
+      max: 2,
+      keyGenerator: (req) => { return req.userId }, // POR DEFAULT ELE CALCULA PELO IP, MAS PODEMOS PASSAR POR EXEMPLO ALGUM ASPECTO DO HEADER, COMO O USER ID
+      // skip: (req) => !req.userId,
+      handler: (req, res) => {
+        res.status(429).json({ message: 'Too many requests, please try again later.' });
+      },
+      store: new RedisStore({
+        client: redisClient,
+        sendCommand: (...args) => redisClient.sendCommand(args) // COMANDO QUE GUARDA AS INFOS NO REDIS
+      })
+    });
+
+    app.use(limiter) // USANDO O MIDWARE LIMITER EM TODAS AS ROTAS DA APLICAÇÃO
+    app.use(express.json());
+    app.use(userRoutes);
+    app.use(quizzRoutes);
+
+    app.listen(3002, () => { console.log('listening on port 3001') });
+
 ___________________________________________________________________________________________________________________________________________
 
 COMANDOS *****
